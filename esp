@@ -5,6 +5,11 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
+local Vector2New = Vector2.new
+local Vector3New = Vector3.new
+local CFrameNew = CFrame.new
+local Color3FromRGB = Color3.fromRGB
+
 local Esp = {
     Enabled = true,
     TeamCheck = false,
@@ -22,23 +27,23 @@ local Esp = {
     Font = 2,
     TextSize = 13,
 
-    TeamChams = { true, Color3.fromRGB(138, 139, 194), Color3.fromRGB(138, 139, 194), 0.25, 0.75, true },
-    TeamBoxes = { true, Color3.fromRGB(255, 255, 255), Color3.fromRGB(0, 0, 0), 0 },
-    TeamHealthbar = { true, Color3.fromRGB(0, 255, 0), Color3.fromRGB(255, 0, 0) },
-    TeamKevlarbar = { false, Color3.fromRGB(0, 150, 255), Color3.fromRGB(50, 50, 50) },
-    TeamArrow = { false, Color3.fromRGB(255, 255, 255), 0.5 },
-    TeamNames = { true, Color3.fromRGB(255, 255, 255) },
-    TeamWeapon = { true, Color3.fromRGB(255, 255, 255) },
+    TeamChams = { true, Color3FromRGB(138, 139, 194), Color3FromRGB(138, 139, 194), 0.25, 0.75, true },
+    TeamBoxes = { true, Color3FromRGB(255, 255, 255), Color3FromRGB(0, 0, 0), 0 },
+    TeamHealthbar = { true, Color3FromRGB(0, 255, 0), Color3FromRGB(255, 0, 0) },
+    TeamKevlarbar = { false, Color3FromRGB(0, 150, 255), Color3FromRGB(50, 50, 50) },
+    TeamArrow = { false, Color3FromRGB(255, 255, 255), 0.5 },
+    TeamNames = { true, Color3FromRGB(255, 255, 255) },
+    TeamWeapon = { true, Color3FromRGB(255, 255, 255) },
     TeamDistance = true,
     TeamHealth = true,
 
-    EnemyChams = { true, Color3.fromRGB(138, 139, 194), Color3.fromRGB(138, 139, 194), 0.25, 0.75, true },
-    EnemyBoxes = { true, Color3.fromRGB(255, 255, 255), Color3.fromRGB(0, 0, 0), 0 },
-    EnemyHealthbar = { true, Color3.fromRGB(0, 255, 0), Color3.fromRGB(255, 0, 0) },
-    EnemyKevlarbar = { false, Color3.fromRGB(0, 150, 255), Color3.fromRGB(50, 50, 50) },
-    EnemyArrow = { false, Color3.fromRGB(255, 255, 255), 0.5 },
-    EnemyNames = { true, Color3.fromRGB(255, 255, 255) },
-    EnemyWeapon = { true, Color3.fromRGB(255, 255, 255) },
+    EnemyChams = { true, Color3FromRGB(138, 139, 194), Color3FromRGB(138, 139, 194), 0.25, 0.75, true },
+    EnemyBoxes = { true, Color3FromRGB(255, 255, 255), Color3FromRGB(0, 0, 0), 0 },
+    EnemyHealthbar = { true, Color3FromRGB(0, 255, 0), Color3FromRGB(255, 0, 0) },
+    EnemyKevlarbar = { false, Color3FromRGB(0, 150, 255), Color3FromRGB(50, 50, 50) },
+    EnemyArrow = { false, Color3FromRGB(255, 255, 255), 0.5 },
+    EnemyNames = { true, Color3FromRGB(255, 255, 255) },
+    EnemyWeapon = { true, Color3FromRGB(255, 255, 255) },
     EnemyDistance = true,
     EnemyHealth = true,
 
@@ -62,24 +67,24 @@ end
 
 local function GetBoundingBox(Model)
     local ModelCFrame, Size = Model:GetBoundingBox()
-    local HalfSize = Size * 0.5
+    local HalfX, HalfY, HalfZ = Size.X * 0.5, Size.Y * 0.5, Size.Z * 0.5
     
     local Corners = {
-        ModelCFrame * CFrame.new(-HalfSize.X,  HalfSize.Y, -HalfSize.Z),
-        ModelCFrame * CFrame.new( HalfSize.X,  HalfSize.Y, -HalfSize.Z),
-        ModelCFrame * CFrame.new(-HalfSize.X, -HalfSize.Y, -HalfSize.Z),
-        ModelCFrame * CFrame.new( HalfSize.X, -HalfSize.Y, -HalfSize.Z),
-        ModelCFrame * CFrame.new(-HalfSize.X,  HalfSize.Y,  HalfSize.Z),
-        ModelCFrame * CFrame.new( HalfSize.X,  HalfSize.Y,  HalfSize.Z),
-        ModelCFrame * CFrame.new(-HalfSize.X, -HalfSize.Y,  HalfSize.Z),
-        ModelCFrame * CFrame.new( HalfSize.X, -HalfSize.Y,  HalfSize.Z),
+        ModelCFrame:PointToWorldSpace(Vector3New(-HalfX,  HalfY, -HalfZ)),
+        ModelCFrame:PointToWorldSpace(Vector3New( HalfX,  HalfY, -HalfZ)),
+        ModelCFrame:PointToWorldSpace(Vector3New(-HalfX, -HalfY, -HalfZ)),
+        ModelCFrame:PointToWorldSpace(Vector3New( HalfX, -HalfY, -HalfZ)),
+        ModelCFrame:PointToWorldSpace(Vector3New(-HalfX,  HalfY,  HalfZ)),
+        ModelCFrame:PointToWorldSpace(Vector3New( HalfX,  HalfY,  HalfZ)),
+        ModelCFrame:PointToWorldSpace(Vector3New(-HalfX, -HalfY,  HalfZ)),
+        ModelCFrame:PointToWorldSpace(Vector3New( HalfX, -HalfY,  HalfZ)),
     }
 
     local MinX, MinY = math.huge, math.huge
     local MaxX, MaxY = -math.huge, -math.huge
 
-    for _, Corner in ipairs(Corners) do
-        local ScreenPos, OnScreen = Camera:WorldToViewportPoint(Corner.Position)
+    for idx = 1, 8 do
+        local ScreenPos, OnScreen = Camera:WorldToViewportPoint(Corners[idx])
         if OnScreen then
             MinX = math.min(MinX, ScreenPos.X)
             MinY = math.min(MinY, ScreenPos.Y)
@@ -108,16 +113,16 @@ function Esp:Add(Player)
     if Player == LocalPlayer then return end
     
     local Elements = {
-        BoxOutline = Draw("Square", { Filled = false, Thickness = 3, Color = Color3.fromRGB(0, 0, 0) }),
+        BoxOutline = Draw("Square", { Filled = false, Thickness = 3, Color = Color3FromRGB(0, 0, 0) }),
         BoxFill = Draw("Square", { Filled = true, Thickness = 1 }),
-        Box = Draw("Square", { Filled = false, Thickness = 1, Color = Color3.fromRGB(255, 255, 255) }),
+        Box = Draw("Square", { Filled = false, Thickness = 1, Color = Color3FromRGB(255, 255, 255) }),
         
-        BarOutline = Draw("Square", { Filled = true, Thickness = 1, Color = Color3.fromRGB(0, 0, 0) }),
+        BarOutline = Draw("Square", { Filled = true, Thickness = 1, Color = Color3FromRGB(0, 0, 0) }),
         Bar = Draw("Square", { Filled = true, Thickness = 1 }),
         
-        Name = Draw("Text", { Color = Color3.fromRGB(255, 255, 255), Font = self.Font, Size = self.TextSize, Center = true, Outline = self.Outlines }),
-        Distance = Draw("Text", { Color = Color3.fromRGB(255, 255, 255), Font = self.Font, Size = self.TextSize, Center = true, Outline = self.Outlines }),
-        Weapon = Draw("Text", { Color = Color3.fromRGB(255, 255, 255), Font = self.Font, Size = self.TextSize, Center = true, Outline = self.Outlines }),
+        Name = Draw("Text", { Color = Color3FromRGB(255, 255, 255), Font = self.Font, Size = self.TextSize, Center = true, Outline = self.Outlines }),
+        Distance = Draw("Text", { Color = Color3FromRGB(255, 255, 255), Font = self.Font, Size = self.TextSize, Center = true, Outline = self.Outlines }),
+        Weapon = Draw("Text", { Color = Color3FromRGB(255, 255, 255), Font = self.Font, Size = self.TextSize, Center = true, Outline = self.Outlines }),
         
         Cham = Instance.new("Highlight")
     }
@@ -205,8 +210,8 @@ function Esp:Update()
 
         if BoxesConfig[1] then
             Objects.Box.Visible = true
-            Objects.Box.Size = Vector2.new(Width, Height)
-            Objects.Box.Position = Vector2.new(MinX, MinY)
+            Objects.Box.Size = Vector2New(Width, Height)
+            Objects.Box.Position = Vector2New(MinX, MinY)
             Objects.Box.Color = BoxesConfig[2]
 
             Objects.BoxOutline.Visible = self.Outlines
@@ -229,12 +234,12 @@ function Esp:Update()
             local BarHeight = Height * HealthPercent
 
             Objects.BarOutline.Visible = self.Outlines
-            Objects.BarOutline.Size = Vector2.new(3, Height + 2)
-            Objects.BarOutline.Position = Vector2.new(MinX - 6, MinY - 1)
+            Objects.BarOutline.Size = Vector2New(3, Height + 2)
+            Objects.BarOutline.Position = Vector2New(MinX - 6, MinY - 1)
 
             Objects.Bar.Visible = true
-            Objects.Bar.Size = Vector2.new(1, BarHeight)
-            Objects.Bar.Position = Vector2.new(MinX - 5, MinY + (Height - BarHeight))
+            Objects.Bar.Size = Vector2New(1, BarHeight)
+            Objects.Bar.Position = Vector2New(MinX - 5, MinY + (Height - BarHeight))
             Objects.Bar.Color = HealthConfig[2]:Lerp(HealthConfig[1], HealthPercent)
         else
             Objects.Bar.Visible = false
@@ -254,7 +259,7 @@ function Esp:Update()
             Objects.Name.Visible = true
             Objects.Name.Text = DisplayString
             Objects.Name.Color = NamesConfig[2]
-            Objects.Name.Position = Vector2.new(MinX + (Width / 2), MinY - self.TextSize - 3)
+            Objects.Name.Position = Vector2New(MinX + (Width / 2), MinY - self.TextSize - 3)
             Objects.Name.Outline = self.Outlines
         else
             Objects.Name.Visible = false
@@ -266,7 +271,7 @@ function Esp:Update()
                 Objects.Weapon.Visible = true
                 Objects.Weapon.Text = string.lower(CurrentTool.Name)
                 Objects.Weapon.Color = WeaponConfig[2]
-                Objects.Weapon.Position = Vector2.new(MinX + (Width / 2), MaxY + 2)
+                Objects.Weapon.Position = Vector2New(MinX + (Width / 2), MaxY + 2)
                 Objects.Weapon.Outline = self.Outlines
             else
                 Objects.Weapon.Visible = false
