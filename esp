@@ -22,7 +22,6 @@ local Esp = {
     Font = 2,
     TextSize = 13,
 
-    -- [Enabled, Color, FillColor/OutlineColor, FillAlpha, OutlineAlpha, AlwaysOnTop]
     TeamChams = { true, Color3.fromRGB(138, 139, 194), Color3.fromRGB(138, 139, 194), 0.25, 0.75, true },
     TeamBoxes = { true, Color3.fromRGB(255, 255, 255), Color3.fromRGB(0, 0, 0), 0 },
     TeamHealthbar = { true, Color3.fromRGB(0, 255, 0), Color3.fromRGB(255, 0, 0) },
@@ -62,18 +61,18 @@ local function Draw(Type, Properties)
 end
 
 local function GetBoundingBox(Model)
-    local CFrame, Size = Model:GetBoundingBox()
+    local ModelCFrame, Size = Model:GetBoundingBox()
     local HalfSize = Size * 0.5
     
     local Corners = {
-        CFrame * CFrame.new(-HalfSize.X,  HalfSize.Y, -HalfSize.Z),
-        CFrame * CFrame.new( HalfSize.X,  HalfSize.Y, -HalfSize.Z),
-        CFrame * CFrame.new(-HalfSize.X, -HalfSize.Y, -HalfSize.Z),
-        CFrame * CFrame.new( HalfSize.X, -HalfSize.Y, -HalfSize.Z),
-        CFrame * CFrame.new(-HalfSize.X,  HalfSize.Y,  HalfSize.Z),
-        CFrame * CFrame.new( HalfSize.X,  HalfSize.Y,  HalfSize.Z),
-        CFrame * CFrame.new(-HalfSize.X, -HalfSize.Y,  HalfSize.Z),
-        CFrame * CFrame.new( HalfSize.X, -HalfSize.Y,  HalfSize.Z),
+        ModelCFrame * CFrame.new(-HalfSize.X,  HalfSize.Y, -HalfSize.Z),
+        ModelCFrame * CFrame.new( HalfSize.X,  HalfSize.Y, -HalfSize.Z),
+        ModelCFrame * CFrame.new(-HalfSize.X, -HalfSize.Y, -HalfSize.Z),
+        ModelCFrame * CFrame.new( HalfSize.X, -HalfSize.Y, -HalfSize.Z),
+        ModelCFrame * CFrame.new(-HalfSize.X,  HalfSize.Y,  HalfSize.Z),
+        ModelCFrame * CFrame.new( HalfSize.X,  HalfSize.Y,  HalfSize.Z),
+        ModelCFrame * CFrame.new(-HalfSize.X, -HalfSize.Y,  HalfSize.Z),
+        ModelCFrame * CFrame.new( HalfSize.X, -HalfSize.Y,  HalfSize.Z),
     }
 
     local MinX, MinY = math.huge, math.huge
