@@ -4,10 +4,9 @@ local Players = game:GetService("Players")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
-
+-- hi 
 local Vector2New = Vector2.new
 local Vector3New = Vector3.new
-local CFrameNew = CFrame.new
 local Color3FromRGB = Color3.fromRGB
 
 local Esp = {
@@ -27,6 +26,7 @@ local Esp = {
     Font = 2,
     TextSize = 13,
 
+    -- [Enabled, GreenColor, RedColor]
     TeamChams = { true, Color3FromRGB(138, 139, 194), Color3FromRGB(138, 139, 194), 0.25, 0.75, true },
     TeamBoxes = { true, Color3FromRGB(255, 255, 255), Color3FromRGB(0, 0, 0), 0 },
     TeamHealthbar = { true, Color3FromRGB(0, 255, 0), Color3FromRGB(255, 0, 0) },
@@ -240,7 +240,7 @@ function Esp:Update()
             Objects.Bar.Visible = true
             Objects.Bar.Size = Vector2New(1, BarHeight)
             Objects.Bar.Position = Vector2New(MinX - 5, MinY + (Height - BarHeight))
-            Objects.Bar.Color = HealthConfig[2]:Lerp(HealthConfig[1], HealthPercent)
+            Objects.Bar.Color = HealthConfig[3]:Lerp(HealthConfig[2], HealthPercent)
         else
             Objects.Bar.Visible = false
             Objects.BarOutline.Visible = false
