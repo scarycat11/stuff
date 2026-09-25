@@ -1,0 +1,304 @@
+local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
+local Players = game:GetService("Players")
+
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+local Esp = {
+    Enabled = true,
+    TeamCheck = false,
+    VisibleCheck = false,
+    Outlines = true,
+    LimitDistance = false,
+    ShortNames = false,
+
+    MaxChar = 4,
+    MaxDistance = 1200,
+    FadeFactor = 20,
+    ArrowRadius = 300,
+    ArrowSize = 15,
+
+    Font = 2,
+    TextSize = 13,
+
+    -- [Enabled, Color, FillColor/OutlineColor, FillAlpha, OutlineAlpha, AlwaysOnTop]
+    TeamChams = { true, Color3.fromRGB(138, 139, 194), Color3.fromRGB(138, 139, 194), 0.25, 0.75, true },
+    TeamBoxes = { true, Color3.fromRGB(255, 255, 255), Color3.fromRGB(0, 0, 0), 0 },
+    TeamHealthbar = { true, Color3.fromRGB(0, 255, 0), Color3.fromRGB(255, 0, 0) },
+    TeamKevlarbar = { false, Color3.fromRGB(0, 150, 255), Color3.fromRGB(50, 50, 50) },
+    TeamArrow = { false, Color3.fromRGB(255, 255, 255), 0.5 },
+    TeamNames = { true, Color3.fromRGB(255, 255, 255) },
+    TeamWeapon = { true, Color3.fromRGB(255, 255, 255) },
+    TeamDistance = true,
+    TeamHealth = true,
+
+    EnemyChams = { true, Color3.fromRGB(138, 139, 194), Color3.fromRGB(138, 139, 194), 0.25, 0.75, true },
+    EnemyBoxes = { true, Color3.fromRGB(255, 255, 255), Color3.fromRGB(0, 0, 0), 0 },
+    EnemyHealthbar = { true, Color3.fromRGB(0, 255, 0), Color3.fromRGB(255, 0, 0) },
+    EnemyKevlarbar = { false, Color3.fromRGB(0, 150, 255), Color3.fromRGB(50, 50, 50) },
+    EnemyArrow = { false, Color3.fromRGB(255, 255, 255), 0.5 },
+    EnemyNames = { true, Color3.fromRGB(255, 255, 255) },
+    EnemyWeapon = { true, Color3.fromRGB(255, 255, 255) },
+    EnemyDistance = true,
+    EnemyHealth = true,
+
+    Players = {},
+    Connections = {}
+}
+
+local Folder = Instance.new("Folder")
+Folder.Name = "EspChamsStorage"
+Folder.Parent = CoreGui
+
+local function Draw(Type, Properties)
+    local Instance = Drawing.new(Type)
+    if Properties then
+        for Property, Value in pairs(Properties) do
+            Instance[Property] = Value
+        end
+    end
+    return Instance
+end
+
+local function GetBoundingBox(Model)
+    local CFrame, Size = Model:GetBoundingBox()
+    local HalfSize = Size * 0.5
+    
+    local Corners = {
+        CFrame * CFrame.new(-HalfSize.X,  HalfSize.Y, -HalfSize.Z),
+        CFrame * CFrame.new( HalfSize.X,  HalfSize.Y, -HalfSize.Z),
+        CFrame * CFrame.new(-HalfSize.X, -HalfSize.Y, -HalfSize.Z),
+        CFrame * CFrame.new( HalfSize.X, -HalfSize.Y, -HalfSize.Z),
+        CFrame * CFrame.new(-HalfSize.X,  HalfSize.Y,  HalfSize.Z),
+        CFrame * CFrame.new( HalfSize.X,  HalfSize.Y,  HalfSize.Z),
+        CFrame * CFrame.new(-HalfSize.X, -HalfSize.Y,  HalfSize.Z),
+        CFrame * CFrame.new( HalfSize.X, -HalfSize.Y,  HalfSize.Z),
+    }
+
+    local MinX, MinY = math.huge, math.huge
+    local MaxX, MaxY = -math.huge, -math.huge
+
+    for _, Corner in ipairs(Corners) do
+        local ScreenPos, OnScreen = Camera:WorldToViewportPoint(Corner.Position)
+        if OnScreen then
+            MinX = math.min(MinX, ScreenPos.X)
+            MinY = math.min(MinY, ScreenPos.Y)
+            MaxX = math.max(MaxX, ScreenPos.X)
+            MaxY = math.max(MaxY, ScreenPos.Y)
+        end
+    end
+
+    return MinX, MinY, MaxX, MaxY
+end
+
+function Esp:CheckAlive(Player)
+    if not Player or not Player.Character then return false end
+    local Humanoid = Player.Character:FindFirstChildOfClass("Humanoid")
+    local RootPart = Player.Character:FindFirstChild("HumanoidRootPart") or Player.Character.PrimaryPart
+    return Humanoid and RootPart and Humanoid.Health > 0
+end
+
+function Esp:CheckTeam(Player)
+    if Player == LocalPlayer then return false end
+    if not self.TeamCheck then return false end
+    return Player.Team == LocalPlayer.Team
+end
+
+function Esp:Add(Player)
+    if Player == LocalPlayer then return end
+    
+    local Elements = {
+        BoxOutline = Draw("Square", { Filled = false, Thickness = 3, Color = Color3.fromRGB(0, 0, 0) }),
+        BoxFill = Draw("Square", { Filled = true, Thickness = 1 }),
+        Box = Draw("Square", { Filled = false, Thickness = 1, Color = Color3.fromRGB(255, 255, 255) }),
+        
+        BarOutline = Draw("Square", { Filled = true, Thickness = 1, Color = Color3.fromRGB(0, 0, 0) }),
+        Bar = Draw("Square", { Filled = true, Thickness = 1 }),
+        
+        Name = Draw("Text", { Color = Color3.fromRGB(255, 255, 255), Font = self.Font, Size = self.TextSize, Center = true, Outline = self.Outlines }),
+        Distance = Draw("Text", { Color = Color3.fromRGB(255, 255, 255), Font = self.Font, Size = self.TextSize, Center = true, Outline = self.Outlines }),
+        Weapon = Draw("Text", { Color = Color3.fromRGB(255, 255, 255), Font = self.Font, Size = self.TextSize, Center = true, Outline = self.Outlines }),
+        
+        Cham = Instance.new("Highlight")
+    }
+
+    Elements.Cham.Name = Player.Name
+    Elements.Cham.Parent = Folder
+
+    self.Players[Player] = Elements
+end
+
+function Esp:Disable(Player)
+    local Cache = self.Players[Player]
+    if Cache then
+        for Key, Object in pairs(Cache) do
+            if Key == "Cham" then
+                Object.Enabled = false
+            else
+                Object.Visible = false
+            end
+        end
+    end
+end
+
+function Esp:Remove(Player)
+    local Cache = self.Players[Player]
+    if Cache then
+        for Key, Object in pairs(Cache) do
+            if Key == "Cham" then
+                Object:Destroy()
+            else
+                Object:Remove()
+            end
+        end
+    end
+    self.Players[Player] = nil
+end
+
+function Esp:Update()
+    for Player, Objects in pairs(self.Players) do
+        if not self.Enabled or not self:CheckAlive(Player) then
+            self:Disable(Player)
+            continue
+        end
+
+        local Character = Player.Character
+        local RootPart = Character:FindFirstChild("HumanoidRootPart") or Character.PrimaryPart
+        local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+        
+        local Pos, OnScreen = Camera:WorldToViewportPoint(RootPart.Position)
+        local IsTeammate = self:CheckTeam(Player)
+        
+        local Prefix = IsTeammate and "Team" or "Enemy"
+        local ChamsConfig = self[Prefix .. "Chams"]
+        local BoxesConfig = self[Prefix .. "Boxes"]
+        local NamesConfig = self[Prefix .. "Names"]
+        local HealthConfig = self[Prefix .. "Healthbar"]
+        local WeaponConfig = self[Prefix .. "Weapon"]
+
+        if ChamsConfig[1] then
+            Objects.Cham.Adornee = Character
+            Objects.Cham.Enabled = true
+            Objects.Cham.FillColor = ChamsConfig[2]
+            Objects.Cham.OutlineColor = ChamsConfig[3]
+            Objects.Cham.FillTransparency = ChamsConfig[4]
+            Objects.Cham.OutlineTransparency = ChamsConfig[5]
+            Objects.Cham.DepthMode = ChamsConfig[6] and Enum.HighlightDepthMode.AlwaysOnTop or Enum.HighlightDepthMode.Occluded
+        else
+            Objects.Cham.Enabled = false
+        end
+
+        if not OnScreen then
+            self:Disable(Player)
+            continue
+        end
+
+        local MinX, MinY, MaxX, MaxY = GetBoundingBox(Character)
+
+        if MinX == math.huge or MinY == math.huge then
+            self:Disable(Player)
+            continue
+        end
+
+        local Width = MaxX - MinX
+        local Height = MaxY - MinY
+
+        if BoxesConfig[1] then
+            Objects.Box.Visible = true
+            Objects.Box.Size = Vector2.new(Width, Height)
+            Objects.Box.Position = Vector2.new(MinX, MinY)
+            Objects.Box.Color = BoxesConfig[2]
+
+            Objects.BoxOutline.Visible = self.Outlines
+            Objects.BoxOutline.Size = Objects.Box.Size
+            Objects.BoxOutline.Position = Objects.Box.Position
+
+            Objects.BoxFill.Visible = BoxesConfig[4] > 0
+            Objects.BoxFill.Size = Objects.Box.Size
+            Objects.BoxFill.Position = Objects.Box.Position
+            Objects.BoxFill.Color = BoxesConfig[3]
+            Objects.BoxFill.Transparency = BoxesConfig[4]
+        else
+            Objects.Box.Visible = false
+            Objects.BoxOutline.Visible = false
+            Objects.BoxFill.Visible = false
+        end
+
+        if HealthConfig[1] then
+            local HealthPercent = math.clamp(Humanoid.Health / Humanoid.MaxHealth, 0, 1)
+            local BarHeight = Height * HealthPercent
+
+            Objects.BarOutline.Visible = self.Outlines
+            Objects.BarOutline.Size = Vector2.new(3, Height + 2)
+            Objects.BarOutline.Position = Vector2.new(MinX - 6, MinY - 1)
+
+            Objects.Bar.Visible = true
+            Objects.Bar.Size = Vector2.new(1, BarHeight)
+            Objects.Bar.Position = Vector2.new(MinX - 5, MinY + (Height - BarHeight))
+            Objects.Bar.Color = HealthConfig[2]:Lerp(HealthConfig[1], HealthPercent)
+        else
+            Objects.Bar.Visible = false
+            Objects.BarOutline.Visible = false
+        end
+
+        if NamesConfig[1] then
+            local DisplayString = Player.Name
+            if self.ShortNames and #DisplayString > self.MaxChar then
+                DisplayString = string.sub(DisplayString, 1, self.MaxChar) .. ".."
+            end
+            if self[Prefix .. "Distance"] then
+                local DistanceMeters = math.floor((RootPart.Position - Camera.CFrame.Position).Magnitude / 3)
+                DisplayString = string.format("[%dm] %s", DistanceMeters, DisplayString)
+            end
+
+            Objects.Name.Visible = true
+            Objects.Name.Text = DisplayString
+            Objects.Name.Color = NamesConfig[2]
+            Objects.Name.Position = Vector2.new(MinX + (Width / 2), MinY - self.TextSize - 3)
+            Objects.Name.Outline = self.Outlines
+        else
+            Objects.Name.Visible = false
+        end
+
+        if WeaponConfig[1] then
+            local CurrentTool = Character:FindFirstChildOfClass("Tool")
+            if CurrentTool then
+                Objects.Weapon.Visible = true
+                Objects.Weapon.Text = string.lower(CurrentTool.Name)
+                Objects.Weapon.Color = WeaponConfig[2]
+                Objects.Weapon.Position = Vector2.new(MinX + (Width / 2), MaxY + 2)
+                Objects.Weapon.Outline = self.Outlines
+            else
+                Objects.Weapon.Visible = false
+            end
+        else
+            Objects.Weapon.Visible = false
+        end
+    end
+end
+
+function Esp:ClearConnections()
+    for _, Connection in ipairs(self.Connections) do
+        Connection:Disconnect()
+    end
+    table.clear(self.Connections)
+end
+
+for _, Player in ipairs(Players:GetPlayers()) do
+    Esp:Add(Player)
+end
+
+table.insert(Esp.Connections, Players.PlayerAdded:Connect(function(Player)
+    Esp:Add(Player)
+end))
+
+table.insert(Esp.Connections, Players.PlayerRemoving:Connect(function(Player)
+    Esp:Remove(Player)
+end))
+
+RunService:BindToRenderStep("RenderEspEngine", Enum.RenderPriority.Camera.Value + 1, function()
+    Esp:Update()
+end)
+
+return Esp
