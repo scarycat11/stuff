@@ -4,7 +4,7 @@ local Players = game:GetService("Players")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
--- hi 
+
 local Vector2New = Vector2.new
 local Vector3New = Vector3.new
 local Color3FromRGB = Color3.fromRGB
@@ -15,9 +15,7 @@ local Esp = {
     VisibleCheck = false,
     Outlines = true,
     LimitDistance = false,
-    ShortNames = false,
 
-    MaxChar = 4,
     MaxDistance = 1200,
     FadeFactor = 20,
     ArrowRadius = 300,
@@ -26,7 +24,6 @@ local Esp = {
     Font = 2,
     TextSize = 13,
 
-    -- [Enabled, GreenColor, RedColor]
     TeamChams = { true, Color3FromRGB(138, 139, 194), Color3FromRGB(138, 139, 194), 0.25, 0.75, true },
     TeamBoxes = { true, Color3FromRGB(255, 255, 255), Color3FromRGB(0, 0, 0), 0 },
     TeamHealthbar = { true, Color3FromRGB(0, 255, 0), Color3FromRGB(255, 0, 0) },
@@ -248,9 +245,6 @@ function Esp:Update()
 
         if NamesConfig[1] then
             local DisplayString = Player.Name
-            if self.ShortNames and #DisplayString > self.MaxChar then
-                DisplayString = string.sub(DisplayString, 1, self.MaxChar) .. ".."
-            end
             if self[Prefix .. "Distance"] then
                 local DistanceMeters = math.floor((RootPart.Position - Camera.CFrame.Position).Magnitude / 3)
                 DisplayString = string.format("[%dm] %s", DistanceMeters, DisplayString)
